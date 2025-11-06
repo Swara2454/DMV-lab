@@ -1,0 +1,151 @@
+# Data Visualization using Matplotlib – Analyzing AQI Trends in a City
+
+# --- Import Required Libraries ---
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+sns.set_style("darkgrid")
+
+# --- Load Dataset ---
+df = pd.read_csv('/content/AirQuality.csv', sep=';')
+
+# --- Initial Exploration ---
+print("\n--- Sample Rows ---")
+print(df.head())
+
+print("\n--- Column Names ---")
+print(df.columns)
+
+print("\n--- Dataset Info ---")
+df.info()
+
+print("\n--- Shape ---")
+print(df.shape)
+
+print("\n--- Summary Statistics ---")
+print(df.describe())
+
+print("\n--- Missing Values ---")
+print(df.isna().sum())
+
+print("\n--- Duplicate Rows ---")
+print(df.duplicated().sum())
+
+
+# --- Data Cleaning ---
+df = df.iloc[:, :-2]
+df.replace(to_replace=',', value='.', regex=True, inplace=True)
+
+columns_to_convert = ['CO(GT)', 'C6H6(GT)', 'T', 'RH', 'AH']
+for column in columns_to_convert:
+    df[column] = pd.to_numeric(df[column], errors='coerce')
+
+df.replace(-200, np.nan, inplace=True)
+df.info()
+
+df.drop('NMHC(GT)', axis=1, inplace=True)
+df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
+df['Time'] = pd.to_datetime(df['Time'], format='%H.%M.%S').dt.time
+df.describe()
+
+# --- Box Plots for Numeric Columns ---
+numerical_columns = df.select_dtypes(include=[np.number]).columns
+for column in numerical_columns:
+    plt.figure(figsize=(6, 3))
+    sns.boxplot(x=df[column])
+    plt.title(f'Boxplot of {column}')
+    plt.show()
+
+# --- Histograms for Numeric Columns ---
+for column in numerical_columns:
+    plt.figure(figsize=(6, 3))
+    sns.histplot(x=df[column], stat="count", color="blue", bins=15, kde={'alpha': 0.5})
+    plt.title(f'Histogram of {column}')
+    plt.xlabel(column)
+    plt.ylabel('Frequency')
+    plt.show()
+
+# --- Pair Plot ---
+sns.pairplot(df, diag_kind='kde')
+plt.show()
+
+# --- Missing Value Analysis ---
+df.isnull().sum()
+
+# FIX 1: Avoid FutureWarning for interpolation
+df = df.infer_objects(copy=False)
+
+# --- Interpolation ---
+df = df.apply(lambda column: column.interpolate(method="linear")
+              if column.dtype != 'datetime64[ns]' and column.dtype != '<m8[ns]'
+              else column)
+df.info()
+df.isnull().sum()
+
+# FIX 2: Select only numeric columns for correlation
+numeric_df = df.select_dtypes(include=[np.number])
+
+# --- Correlation Heatmap ---
+plt.figure(figsize=(15, 10))
+sns.heatmap(numeric_df.corr(method='pearson', min_periods=1), annot=True)
+plt.title('Correlation Heatmap of Numeric Features')
+plt.show()
+
+df.columns
+df.isna().sum()
+
+df = df.dropna()
+df.isna().sum()
+
+# --- Combine Date and Time into Datetime ---
+df['Datetime'] = df.apply(lambda row: pd.to_datetime(str(row['Date']) + ' ' + str(row['Time'])), axis=1)
+df.head()
+df.info()
+
+# --- Line Plots for Pollutants ---
+pollutants = ['CO(GT)', 'PT08.S1(CO)', 'C6H6(GT)']
+df_pollutants = df[['Datetime'] + pollutants]
+plt.figure(figsize=(12, 6))
+sns.set_style("darkgrid")
+
+for i, pollutant in enumerate(pollutants):
+    plt.subplot(len(pollutants), 1, i + 1)
+    plt.plot(df_pollutants['Datetime'], df_pollutants[pollutant], label=pollutant)
+    plt.xlabel('Datetime')
+    plt.ylabel('Value')
+    plt.title(f'{pollutant} Trend Over Time')
+    plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+# --- Mean AQI Bar Plot ---
+df['AQI'] = (df['CO(GT)'] + df['C6H6(GT)'] + df['NOx(GT)'] +
+             df['NO2(GT)'] + df['PT08.S5(O3)']) / 5
+df_aqi_by_date = df.groupby('Date')['AQI'].mean().reset_index()
+
+plt.figure(figsize=(12, 6))
+sns.set_style("darkgrid")
+plt.bar(df_aqi_by_date['Date'], df_aqi_by_date['AQI'], color='b', alpha=0.7)
+plt.xlabel('Date')
+plt.ylabel('Mean AQI')
+plt.title('Mean AQI by Date')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# --- Box Plot: AQI vs Pollutants ---
+df['AQI'] = (df['CO(GT)'] + df['C6H6(GT)'] + df['NOx(GT)'] +
+             df['NO2(GT)'] + df['PT08.S5(O3)']) / 5
+pollutant_categories = ['CO(GT)', 'C6H6(GT)', 'NOx(GT)', 'NO2(GT)', 'PT08.S5(O3)']
+df_plot = df[['AQI'] + pollutant_categories]
+
+plt.figure(figsize=(12, 6))
+sns.set_style("darkgrid")
+sns.boxplot(data=df_plot)
+plt.title('Distribution of AQI and Pollutants')
+plt.xlabel('Pollutants')
+plt.ylabel('Concentration')
+plt.show()
