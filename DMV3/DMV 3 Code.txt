@@ -1,0 +1,112 @@
+# 3. Analyzing Customer Churn in a Telecommunications Company
+
+# ==========================
+# Imports
+# ==========================
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.model_selection import train_test_split
+
+# ==========================
+# Load Dataset
+# ==========================
+df = pd.read_csv("/content/Telco-Customer-Churn.csv")
+print("Shape of dataset:", df.shape)
+print(df.head())
+
+# ==========================
+# Check for missing values and duplicates
+# ==========================
+print("Missing values:\n", df.isna().sum())
+print("Duplicate rows:", df.duplicated().sum())
+
+# Remove duplicates
+df = df.drop_duplicates()
+
+# Convert 'TotalCharges' to numeric
+df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
+
+# ==========================
+# Drop unnecessary columns
+# ==========================
+df = df.drop(columns=['customerID'])
+
+# ==========================
+# Encode categorical columns
+# ==========================
+le = LabelEncoder()
+for col in df.columns:
+    if df[col].dtype == 'object':
+        df[col] = le.fit_transform(df[col])
+
+print("Data types after encoding:\n", df.dtypes)
+
+# ==========================
+# Descriptive Statistics
+# ==========================
+print(df.describe())
+
+# ==========================
+# Pairplot and Histogram
+# ==========================
+sns.pairplot(df)
+plt.show()
+
+def plot_histograms(df):
+    plt.figure(figsize=(20, 50))
+    for i, column in enumerate(df.columns, 1):
+        plt.subplot(int(len(df.columns)/2)+1, 4, i)
+        sns.histplot(df[column])
+    plt.tight_layout()
+    plt.show()
+
+plot_histograms(df)
+
+# ==========================
+# Scatter plot for MonthlyCharges vs TotalCharges
+# ==========================
+sns.scatterplot(x=df['MonthlyCharges'], y=df['TotalCharges'])
+plt.title("Monthly Charges vs Total Charges")
+plt.show()
+
+# ==========================
+# Boxplot to check outliers
+# ==========================
+def plot_boxplots(df):
+    plt.figure(figsize=(17, 50))
+    for i, column in enumerate(df.columns, 1):
+        plt.subplot(int(len(df.columns)/2)+1, 4, i)
+        sns.boxplot(x=df[column])
+    plt.tight_layout()
+    plt.show()
+
+plot_boxplots(df)
+
+# ==========================
+# Normalize MonthlyCharges and TotalCharges
+# ==========================
+scaler = StandardScaler()
+df[['MonthlyCharges', 'TotalCharges']] = scaler.fit_transform(df[['MonthlyCharges', 'TotalCharges']])
+
+# ==========================
+# Train-test split
+# ==========================
+X = df.drop('Churn', axis=1)
+y = df['Churn']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+print("X_train shape:", X_train.shape)
+print("X_test shape:", X_test.shape)
+print("y_train shape:", y_train.shape)
+print("y_test shape:", y_test.shape)
+
+# ==========================
+# Correlation Heatmap
+# ==========================
+plt.figure(figsize=(12, 8))
+sns.heatmap(df.corr(), annot=True, cmap='coolwarm', fmt=".2f")
+plt.title("Correlation Heatmap")
+plt.show()
