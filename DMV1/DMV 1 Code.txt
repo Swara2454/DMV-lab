@@ -1,0 +1,119 @@
+# 1. Data Loading, Storage and File Formats Analyzing Sales Data from Multiple File Formats
+
+# --- Step 1: Import Required Libraries ---
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# --- Step 2: Load Datasets ---
+df_json = pd.read_json("/content/customers.json")
+df_excel = pd.read_excel("/content/Sample-Sales-Data.xlsx")
+df_csv = pd.read_csv("/content/sales_data_sample.csv", encoding='latin1')
+
+# --- Step 3: Display Basic Info and Shapes ---
+print(f"JSON Shape: {df_json.shape}")
+print(f"Excel Shape: {df_excel.shape}")
+print(f"CSV Shape: {df_csv.shape}\n")
+
+print("\n--- Dataset Info ---")
+print("JSON Dataset Info:")
+print(df_json.info(), "\n")
+print("Excel Dataset Info:")
+print(df_excel.info(), "\n")
+print("CSV Dataset Info:")
+print(df_csv.info(), "\n")
+
+# --- Step 4: Missing Values Check ---
+print("\nMissing Values in JSON:\n", df_json.isna().sum())
+print("\nMissing Values in Excel:\n", df_excel.isna().sum())
+print("\nMissing Values in CSV:\n", df_csv.isna().sum())
+
+# --- Step 5: Drop Columns with Missing Values ---
+df_csv = df_csv.dropna(axis=1)
+print("\nShape After Dropping Missing Columns:", df_csv.shape)
+print("\nSample Data:\n", df_csv.head())
+
+# --- Step 6: Country Value Counts ---
+plt.figure(figsize=(12, 6))
+df_csv["COUNTRY"].value_counts().plot(kind="bar", color="lightblue", edgecolor="black")
+plt.title("Number of Orders by Country")
+plt.xlabel("Country")
+plt.ylabel("Order Count")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# --- Step 7: Unique Countries ---
+print("\nUnique Countries:\n", df_csv["COUNTRY"].unique())
+
+# --- Step 8: Scatterplot (Sales vs Index) ---
+plt.figure(figsize=(10, 5))
+sns.scatterplot(x=df_csv.index, y=df_csv["SALES"], color="crimson")
+plt.title("Scatterplot of Sales (Index vs Sales)")
+plt.xlabel("Index")
+plt.ylabel("Sales")
+plt.tight_layout()
+plt.show()
+
+# --- Step 9: Sales Summary ---
+print("\n--- Sales Summary ---")
+print(f"Mean Sales: {df_csv['SALES'].mean():.2f}")
+print(f"Median Sales: {df_csv['SALES'].median():.2f}")
+print(f"Mode Sales: {df_csv['SALES'].mode()[0]:.2f}")
+print(f"Total Sales: {df_csv['SALES'].sum():.2f}\n")
+
+# --- Step 10: Boxplot of Sales ---
+plt.figure(figsize=(6, 4))
+sns.boxplot(x=df_csv['SALES'], color="skyblue")
+plt.title("Boxplot of Sales")
+plt.tight_layout()
+plt.show()
+
+# --- Step 11: Heatmap of Correlations ---
+plt.figure(figsize=(8, 5))
+sns.heatmap(df_csv.corr(numeric_only=True), annot=True, cmap='coolwarm')
+plt.title("Heatmap of Numerical Correlations")
+plt.tight_layout()
+plt.show()
+
+# --- Step 12: Sales Distribution ---
+plt.figure(figsize=(6, 4))
+sns.histplot(df_csv['SALES'], kde=True, color="purple")
+plt.title("Distribution of Sales")
+plt.tight_layout()
+plt.show()
+
+# --- Step 13: Scatterplot (Sales vs Price Each) ---
+plt.figure(figsize=(6, 4))
+sns.scatterplot(x="PRICEEACH", y="SALES", data=df_csv, color="teal")
+plt.title("Sales vs. Price Each")
+plt.tight_layout()
+plt.show()
+
+# --- Step 14: Total Sales by Country (Fixed Warning) ---
+plt.figure(figsize=(12, 5))
+sns.barplot(
+    x="COUNTRY", 
+    y="SALES", 
+    hue="COUNTRY",        
+    data=df_csv, 
+    estimator=sum, 
+    errorbar=None, 
+    palette="viridis", 
+    legend=False          
+)
+plt.xticks(rotation=90)
+plt.title("Total Sales by Country")
+plt.tight_layout()
+plt.show()
+
+
+# --- Step 15: Sales by Country and Order Status ---
+plt.figure(figsize=(12, 5))
+sns.barplot(x="COUNTRY", y="SALES", hue="STATUS", data=df_csv, estimator=sum, errorbar=None, palette="Set2")
+plt.xticks(rotation=90)
+plt.title("Sales by Country and Order Status")
+plt.tight_layout()
+plt.show()
+ 
