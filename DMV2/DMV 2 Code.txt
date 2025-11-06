@@ -1,0 +1,201 @@
+# 2. Interacting with Web APIs Analyzing Weather Data from Open WeatherMap
+
+
+# ==========================
+# Required Imports
+# ==========================
+import requests
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# ==========================
+# Cities Data
+# ==========================
+cityData = pd.DataFrame({
+    "city_name": [
+        "Delhi", "Mumbai", "Kolkata", "Chennai", "Bengaluru", "Hyderabad",
+        "Pune", "Ahmedabad", "Jaipur", "Surat", "Lucknow", "Kanpur",
+        "Nagpur", "Indore", "Bhopal", "Visakhapatnam", "Vadodara",
+        "Nashik", "Rajkot", "Amritsar", "Coimbatore", "Patna", "Varanasi",
+        "Ranchi", "Guwahati", "Chandigarh", "Thane", "Mysuru", "Ludhiana",
+        "Noida", "Agra", "Jammu", "Udaipur", "Aurangabad", "Kolhapur"
+    ]
+})
+
+# ==========================
+# Function to Generate Weather Data
+# ==========================
+def generateWeatherData(cityData, limit):
+    weatherDataSet = {
+        "country": [],
+        "city_name": [],
+        "lon": [],
+        "lat": [],
+        "temp": [],
+        "pressure": [],
+        "humidity": [],
+        "wind_speed": [],
+    }
+
+    for city in cityData["city_name"][:limit]:
+        try:
+            api = f"https://api.openweathermap.org/data/2.5/weather?q={city},in&appid=a7860b9cdd53e399a319baf0f53f4cfa&units=metric"
+            requestObj = requests.get(api)
+            jsonData = requestObj.json()
+
+            weatherDataSet['country'].append(jsonData['sys']['country'])
+            weatherDataSet['city_name'].append(jsonData['name'])
+            weatherDataSet['lon'].append(jsonData['coord']['lon'])
+            weatherDataSet['lat'].append(jsonData['coord']['lat'])
+            weatherDataSet['temp'].append(jsonData['main']['temp'])
+            weatherDataSet['pressure'].append(jsonData['main']['pressure'])
+            weatherDataSet['humidity'].append(jsonData['main']['humidity'])
+            weatherDataSet['wind_speed'].append(jsonData['wind']['speed'])
+
+        except:
+            pass
+
+    df = pd.DataFrame(weatherDataSet)
+    df.to_csv("weatherData.csv", index=False)
+    return df
+
+# ==========================
+# Generate Data
+# ==========================
+df = generateWeatherData(cityData, 35)
+print(df.head())
+
+# ==========================
+# Basic Information
+# ==========================
+print(df.shape)
+print(df.isna().sum())
+print("Unique Cities:", len(df['city_name'].unique()))
+print("Duplicate Rows:", df.duplicated().sum())
+
+# ==========================
+# Drop Unnecessary Columns
+# ==========================
+if 'Unnamed: 0' in df.columns:
+    df = df.drop(columns=['Unnamed: 0'])
+
+# ==========================
+# Descriptive Statistics and Info
+# ==========================
+print(df.describe())
+print(df.info())
+
+# ==========================
+# Sort by Temperature
+# ==========================
+tempWiseSorted = df.sort_values("temp", ascending=False)
+print(tempWiseSorted.head())
+
+# ==========================
+# Top Cities Visualization
+# ==========================
+sns.barplot(x=tempWiseSorted.iloc[:5, 1], y=tempWiseSorted.iloc[:5, 4])
+plt.title("Top 5 Cities with Maximum Temperature")
+plt.xlabel("City")
+plt.ylabel("Temperature (°C)")
+plt.show()
+
+sns.barplot(x=tempWiseSorted.iloc[:5, 1], y=tempWiseSorted.iloc[:5, 5])
+plt.title("Top 5 Cities with Maximum Pressure")
+plt.xlabel("City")
+plt.ylabel("Pressure (hPa)")
+plt.show()
+
+sns.barplot(x=tempWiseSorted.iloc[:5, 1], y=tempWiseSorted.iloc[:5, 6])
+plt.title("Top 5 Cities with Maximum Humidity")
+plt.xlabel("City")
+plt.ylabel("Humidity (%)")
+plt.show()
+
+sns.barplot(x=tempWiseSorted.iloc[:5, 1], y=tempWiseSorted.iloc[:5, 7])
+plt.title("Top 5 Cities with Maximum Wind Speed")
+plt.xlabel("City")
+plt.ylabel("Wind Speed (m/s)")
+plt.show()
+
+# ==========================
+# Average Temperature by City
+# ==========================
+avg_temp_by_city = df.groupby('city_name')['temp'].mean().sort_values(ascending=False)[:30]
+plt.figure(figsize=(12, 6))
+sns.barplot(x=avg_temp_by_city.index, y=avg_temp_by_city.values)
+plt.title('Average Temperature by Top 30 Cities')
+plt.xlabel('City')
+plt.ylabel('Average Temperature (°C)')
+plt.xticks(rotation=45)
+plt.show()
+
+# ==========================
+# Trend in Temperature
+# ==========================
+sns.lineplot(df.iloc[:100, 4])
+plt.title("Trend in Temperature")
+plt.ylabel("Temperature (°C)")
+plt.show()
+
+# ==========================
+# Humidity vs Temperature
+# ==========================
+sns.lineplot(x=df.iloc[:150, 4], y=df.iloc[:150, 6])
+plt.title("Humidity vs Temperature")
+plt.xlabel("Temperature (°C)")
+plt.ylabel("Humidity (%)")
+plt.show()
+
+# ==========================
+# Pressure vs Humidity
+# ==========================
+sns.lineplot(x=df.iloc[:, 5], y=df.iloc[:, 6])
+plt.title("Pressure vs Humidity")
+plt.xlabel("Pressure (hPa)")
+plt.ylabel("Humidity (%)")
+plt.show()
+
+# ==========================
+# Scatter Plot
+# ==========================
+sns.scatterplot(data=df, x='temp', y='humidity')
+plt.title('Temperature vs Humidity')
+plt.xlabel('Temperature (°C)')
+plt.ylabel('Humidity (%)')
+plt.show()
+
+# ==========================
+# KDE Plot
+# ==========================
+sns.kdeplot(data=df, x='humidity', fill=True)
+plt.title('Humidity Distribution')
+plt.xlabel('Humidity')
+plt.ylabel('Density')
+plt.show()
+
+# ==========================
+# Violin Plot
+# ==========================
+sns.violinplot(data=df, x='country', y='wind_speed')
+plt.title('Wind Speed Distribution by Country')
+plt.xlabel('Country')
+plt.ylabel('Wind Speed (m/s)')
+plt.show()
+
+# ==========================
+# Pair Plot
+# ==========================
+sns.pairplot(df[['temp', 'pressure', 'humidity', 'wind_speed']])
+plt.suptitle('Pair Plot of Numeric Variables')
+plt.show()
+
+# ==========================
+# Correlation Heatmap
+# ==========================
+plt.figure(figsize=(8, 6))
+sns.heatmap(df.select_dtypes(include='number').corr(), annot=True, cmap="coolwarm", fmt=".2f")
+plt.title("Correlation Heatmap of Weather Parameters")
+plt.show()
