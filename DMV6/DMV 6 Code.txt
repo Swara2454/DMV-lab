@@ -1,0 +1,67 @@
+# Data Aggregation – Analyzing Sales Performance by Region in a Retail Company.
+
+# --- Import Required Libraries ---
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# --- Step 1: Load Dataset with proper encoding ---
+df = pd.read_csv("/content/OnlineRetail.csv", encoding='latin1')
+print(df.head())
+
+# --- Step 2: Explore the Dataset ---
+print("Shape of Dataset:", df.shape)
+print("\nData Info:\n")
+print(df.info())
+
+# --- Step 3: Summary Statistics ---
+print("\nStatistical Summary:\n")
+print(df.describe())
+
+# --- Step 4: Null Value Detection and Removal ---
+print("\nMissing Values Before Cleaning:\n", df.isna().sum())
+
+# Remove unnecessary columns
+required_data = df.drop(['Description', 'CustomerID', 'InvoiceNo'], axis=1)
+print("\nData After Dropping Unnecessary Columns:\n")
+print(required_data.head())
+
+# Check for nulls again
+print("\nMissing Values After Cleaning:\n", required_data.isna().sum())
+
+# --- Step 5: Group By Region and Aggregate Sales ---
+sales_region = df.groupby('Country')['UnitPrice'].sum()
+print("\nSales by Region:\n", sales_region)
+
+# --- Step 6: Visualization (Bar Plot & Pie Chart) ---
+plt.figure(figsize=(8, 8))
+sales_region.plot(kind='bar')
+plt.title("Sales Distribution By Region")
+plt.xlabel("Region")
+plt.ylabel("Total Sales")
+plt.show()
+
+plt.figure(figsize=(8, 8))
+region = df.groupby('Country')['UnitPrice'].sum()[:5]
+region.plot(kind='pie', autopct='%1.1f%%')
+plt.title("Top 5 Regions - Sales Distribution")
+plt.show()
+
+# --- Step 7: Identify Top Performing Region ---
+top_region = sales_region.idxmax()
+print("\n Top Performing Region:", top_region)
+
+# --- Step 8: Group By Country and Quantity ---
+print("\nUnique Quantities Count:", len(df['Quantity'].unique()))
+
+region_stock_code = df.groupby(['Country', 'StockCode', 'Quantity'])['UnitPrice'].sum()
+print("\nGrouped Region, StockCode, Quantity Data:\n", region_stock_code.head(30))
+
+# --- Step 9: Stacked Bar Plot for Comparison ---
+region_stock_code = df.groupby(['Country', 'StockCode', 'Quantity'])['UnitPrice'].sum()[:30]
+region_stock_code.unstack().plot(kind='bar', stacked=True, figsize=(10, 6))
+plt.title("Sales Comparison with Region and Quantity")
+plt.xlabel("Country")
+plt.ylabel("Sales")
+plt.show()
